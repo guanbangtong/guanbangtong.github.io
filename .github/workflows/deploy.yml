@@ -1,0 +1,55 @@
+name: Deploy to GitHub Pages
+
+# 什么时候运行：推送到 main 分支时自动运行；也可以在 GitHub 网页上手动点运行
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# 给这个流程的权限：读代码、发布 Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只跑一个发布；连续推送多次时，排队的只保留最新一次
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # 任务 1：生成网站
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build site
+        run: npm run build
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  # 任务 2：发布到 GitHub Pages（等任务 1 完成后才开始）
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
