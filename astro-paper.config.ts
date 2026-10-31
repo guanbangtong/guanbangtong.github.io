@@ -22,8 +22,7 @@ export default defineAstroPaperConfig({
     showArchives: true,
     showBackButton: true,
     editPost: {
-      enabled: false, 
-      url : "https://github.com/guanbangtong/astro-paper/edit/main/",
+      enabled: false,
     },
     search: "pagefind",
   },
