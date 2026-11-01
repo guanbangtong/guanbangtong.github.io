@@ -1,22 +1,23 @@
 import rss from "@astrojs/rss";
-import { getCollection } from "astro:content";
-import { getSortedPosts } from "@/utils/getSortedPosts";
-import { getPostUrl } from "@/utils/getPostPaths";
-import config from "@/config";
+import { getFeedPosts } from "@utils/feed";
+import type { APIContext } from "astro";
+import { siteConfig } from "@/config";
 
-export async function GET() {
-  const posts = await getCollection("posts");
-  const sortedPosts = getSortedPosts(posts);
+export async function GET(context: APIContext): Promise<Response> {
+	const site = context.site ?? new URL(siteConfig.site);
+	const posts = await getFeedPosts(site);
 
-  return rss({
-    title: config.site.title,
-    description: config.site.description,
-    site: config.site.url,
-    items: sortedPosts.map(({ data, id, filePath }) => ({
-      link: getPostUrl(id, filePath, config.site.lang),
-      title: data.title,
-      description: data.description,
-      pubDate: new Date(data.modDatetime ?? data.pubDatetime),
-    })),
-  });
+	return rss({
+		title: siteConfig.title,
+		description: siteConfig.subtitle || "No description",
+		site: site.href,
+		items: posts.map((post) => ({
+			title: post.title,
+			pubDate: post.pubDate,
+			description: post.description,
+			link: post.link,
+			content: post.contentHtml,
+		})),
+		customData: `<language>${siteConfig.lang}</language>`,
+	});
 }
